@@ -107,4 +107,31 @@ describe("JustAudioPlayerController", () => {
 		expect(formatMediaTime(3661)).toBe("1:01:01");
 		expect(formatMediaTime(Number.NaN)).toBe("0:00");
 	});
+
+	it("does not publish duplicate states for repeated media events or unchanged frames", () => {
+		const scheduler = new ManualScheduler();
+		const updates: ReturnType<JustAudioPlayerController["getState"]>[] = [];
+		const controller = new JustAudioPlayerController((state) => updates.push(state), scheduler);
+		const media = new FakeMedia();
+
+		controller.setActiveMedia(media, true);
+		expect(updates).toHaveLength(1);
+
+		controller.setActiveMedia(media, true);
+		media.dispatchEvent(new Event("play"));
+		expect(updates).toHaveLength(1);
+
+		media.paused = false;
+		media.dispatchEvent(new Event("playing"));
+		expect(updates).toHaveLength(2);
+
+		media.dispatchEvent(new Event("playing"));
+		scheduler.flush();
+		expect(updates).toHaveLength(2);
+
+		media.currentTime = 1;
+		scheduler.flush();
+		expect(updates.at(-1)).toMatchObject({ currentTime: 1 });
+		expect(updates).toHaveLength(3);
+	});
 });

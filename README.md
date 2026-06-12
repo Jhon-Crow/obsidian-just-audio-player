@@ -30,3 +30,14 @@ VaultFolder/.obsidian/plugins/just-audio-player/
 ```
 
 Then enable the plugin in Obsidian's community plugin settings.
+
+Obsidian does not load TypeScript plugin source files directly. `src/*.ts` is development source, and `npm run build` compiles it into the `main.js` file that Obsidian loads.
+
+## Manual Verification
+
+1. Put `manifest.json`, `main.js`, and `styles.css` in `VaultFolder/.obsidian/plugins/just-audio-player/`.
+2. Restart Obsidian or reload plugins, then enable Just Audio Player in community plugin settings.
+3. Open a note with a normal Obsidian audio embed and confirm the floating player is hidden before playback.
+4. Click play on the native Obsidian audio embed.
+5. Confirm Obsidian stays responsive and the floating player appears.
+6. Use the floating play/pause button and timeline, then confirm they control the same native audio embed.

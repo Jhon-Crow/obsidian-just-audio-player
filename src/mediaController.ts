@@ -41,6 +41,19 @@ const MEDIA_EVENTS = [
 
 type MediaEventName = (typeof MEDIA_EVENTS)[number];
 
+function areStatesEqual(left: PlayerState, right: PlayerState): boolean {
+	return (
+		left.visible === right.visible &&
+		left.isPlaying === right.isPlaying &&
+		left.currentTime === right.currentTime &&
+		left.duration === right.duration &&
+		left.progress === right.progress &&
+		left.canSeek === right.canSeek &&
+		left.currentLabel === right.currentLabel &&
+		left.durationLabel === right.durationLabel
+	);
+}
+
 export function formatMediaTime(value: number): string {
 	if (!Number.isFinite(value) || value < 0) {
 		return "0:00";
@@ -227,7 +240,12 @@ export class JustAudioPlayerController {
 	}
 
 	private publish(): void {
-		this.state = this.readState();
+		const nextState = this.readState();
+		if (areStatesEqual(this.state, nextState)) {
+			return;
+		}
+
+		this.state = nextState;
 		this.onStateChange(this.getState());
 	}
 

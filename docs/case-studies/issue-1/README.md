@@ -10,6 +10,8 @@ The issue asks for an Obsidian plugin that leaves the UI untouched until a user 
 
 The issue also requested research, data collection, possible solution analysis, and implementation.
 
+On 2026-06-12, PR feedback reported that clicking play in Obsidian could make the app hang, asked how to verify the plugin after installing the repository into Obsidian, and asked whether Obsidian understands TypeScript.
+
 ## Collected Evidence
 
 - Issue screenshot: `assets/default-obsidian-audio-player.png`
@@ -17,6 +19,8 @@ The issue also requested research, data collection, possible solution analysis, 
 - PNG signature validated locally from the first 8 bytes: `89 50 4e 47 0d 0a 1a 0a`
 - Screenshot dimensions from the issue: 230 x 63
 - Repository state before implementation: only `README.md` and `examples/manifest.json` existed, so the work was a new plugin implementation rather than a patch to existing runtime code.
+- PR feedback from 2026-06-12: native audio play could freeze Obsidian after enabling the plugin.
+- The plugin runtime artifact is `main.js`; TypeScript files under `src/` are development source and are compiled with `npm run build`.
 
 ## External Research
 
@@ -106,6 +110,17 @@ The plugin uses solution 1.
 - The timeline uses the active media element duration and writes directly to `currentTime`.
 - State updates are driven by media events and an animation-frame loop while playing, so the UI is not limited to the throttled `timeupdate` cadence.
 
+## PR Feedback Root Cause
+
+The first implementation rendered state for every relevant media event and every animation frame while audio was playing. It also observed the entire document body and rescanned every audio element on every child-list mutation. In Obsidian, rendering the floating player changes DOM descendants, so the observer could do unnecessary full-document rescans while media events and frame updates were also trying to refresh the player. That combination is the most likely cause of the reported hang after clicking the native play button.
+
+The fix makes two runtime changes:
+
+- The controller now publishes UI updates only when the derived player state actually changes.
+- The mutation observer now rescans only when added or removed nodes contain an `audio` element.
+
+This keeps the plugin attached to Obsidian-rendered audio while avoiding a feedback loop between player rendering and DOM scanning.
+
 ## Verification
 
 - Reproducing unit test: `src/mediaController.test.ts`
@@ -113,6 +128,18 @@ The plugin uses solution 1.
 - Local command: `npm run build`
 - Visual preview captured with Playwright: `assets/floating-player-preview.png`
 - CI workflow added: `.github/workflows/ci.yml`
+
+## Manual Verification Steps
+
+1. Run `npm ci` and `npm run build`.
+2. Copy `manifest.json`, `main.js`, and `styles.css` into `VaultFolder/.obsidian/plugins/just-audio-player/`.
+3. Restart Obsidian or reload plugins.
+4. Enable Just Audio Player in community plugin settings.
+5. Open a note containing a normal Obsidian audio embed.
+6. Before pressing play, confirm no Just Audio Player floating UI is visible.
+7. Click play on the native Obsidian audio embed and confirm Obsidian remains responsive.
+8. Confirm the floating player appears and mirrors play/pause, elapsed time, duration, and seek progress.
+9. Use the floating play/pause button and timeline, and confirm the native audio element responds.
 
 ## Future Enhancements
 

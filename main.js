@@ -46,6 +46,9 @@ var MEDIA_EVENTS = [
   "emptied",
   "abort"
 ];
+function areStatesEqual(left, right) {
+  return left.visible === right.visible && left.isPlaying === right.isPlaying && left.currentTime === right.currentTime && left.duration === right.duration && left.progress === right.progress && left.canSeek === right.canSeek && left.currentLabel === right.currentLabel && left.durationLabel === right.durationLabel;
+}
 function formatMediaTime(value) {
   if (!Number.isFinite(value) || value < 0) {
     return "0:00";
@@ -204,7 +207,11 @@ var JustAudioPlayerController = class {
     };
   }
   publish() {
-    this.state = this.readState();
+    const nextState = this.readState();
+    if (areStatesEqual(this.state, nextState)) {
+      return;
+    }
+    this.state = nextState;
     this.onStateChange(this.getState());
   }
   updateFrameLoop() {
@@ -246,6 +253,27 @@ var CORNER_OPTIONS = {
 var MIN_WIDTH = 240;
 var MAX_WIDTH = 720;
 var TIMELINE_STEPS = 1e3;
+function nodeContainsAudio(node) {
+  if (!(node instanceof Element)) {
+    return false;
+  }
+  return node.matches("audio") || node.querySelector("audio") !== null;
+}
+function mutationsMayAffectAudio(mutations) {
+  return mutations.some((mutation) => {
+    for (const node of Array.from(mutation.addedNodes)) {
+      if (nodeContainsAudio(node)) {
+        return true;
+      }
+    }
+    for (const node of Array.from(mutation.removedNodes)) {
+      if (nodeContainsAudio(node)) {
+        return true;
+      }
+    }
+    return false;
+  });
+}
 function clampWidth(width) {
   if (!Number.isFinite(width)) {
     return DEFAULT_SETTINGS.width;
@@ -371,7 +399,10 @@ var JustAudioPlayerPlugin = class extends import_obsidian.Plugin {
     this.scanForAudioElements();
     this.registerEvent(this.app.workspace.on("layout-change", () => this.scanForAudioElements()));
     this.registerEvent(this.app.workspace.on("active-leaf-change", () => this.scanForAudioElements()));
-    this.observer = new MutationObserver(() => {
+    this.observer = new MutationObserver((mutations) => {
+      if (!mutationsMayAffectAudio(mutations)) {
+        return;
+      }
       this.scanForAudioElements();
       this.removeDetachedAudioElements();
     });

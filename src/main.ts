@@ -22,6 +22,32 @@ const MIN_WIDTH = 240;
 const MAX_WIDTH = 720;
 const TIMELINE_STEPS = 1000;
 
+function nodeContainsAudio(node: Node): boolean {
+	if (!(node instanceof Element)) {
+		return false;
+	}
+
+	return node.matches("audio") || node.querySelector("audio") !== null;
+}
+
+function mutationsMayAffectAudio(mutations: MutationRecord[]): boolean {
+	return mutations.some((mutation) => {
+		for (const node of Array.from(mutation.addedNodes)) {
+			if (nodeContainsAudio(node)) {
+				return true;
+			}
+		}
+
+		for (const node of Array.from(mutation.removedNodes)) {
+			if (nodeContainsAudio(node)) {
+				return true;
+			}
+		}
+
+		return false;
+	});
+}
+
 function clampWidth(width: number): number {
 	if (!Number.isFinite(width)) {
 		return DEFAULT_SETTINGS.width;
@@ -165,7 +191,11 @@ export default class JustAudioPlayerPlugin extends Plugin {
 		this.registerEvent(this.app.workspace.on("layout-change", () => this.scanForAudioElements()));
 		this.registerEvent(this.app.workspace.on("active-leaf-change", () => this.scanForAudioElements()));
 
-		this.observer = new MutationObserver(() => {
+		this.observer = new MutationObserver((mutations) => {
+			if (!mutationsMayAffectAudio(mutations)) {
+				return;
+			}
+
 			this.scanForAudioElements();
 			this.removeDetachedAudioElements();
 		});
