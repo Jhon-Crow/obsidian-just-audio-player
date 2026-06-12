@@ -1,0 +1,26 @@
+{
+	"name": "obsidian-just-audio-player",
+	"version": "0.1.0",
+	"description": "A small Obsidian plugin that mirrors the active audio embed in a configurable floating player.",
+	"main": "main.js",
+	"scripts": {
+		"dev": "node esbuild.config.mjs",
+		"build": "tsc -noEmit && node esbuild.config.mjs production",
+		"test": "vitest run"
+	},
+	"keywords": [
+		"obsidian",
+		"audio",
+		"player"
+	],
+	"author": "Jhon Crow",
+	"license": "MIT",
+	"devDependencies": {
+		"@types/node": "^25.9.3",
+		"builtin-modules": "^5.2.0",
+		"esbuild": "^0.28.1",
+		"obsidian": "^1.13.1",
+		"typescript": "^6.0.3",
+		"vitest": "^4.1.8"
+	}
+}

@@ -1,0 +1,110 @@
+.just-audio-player {
+	--just-audio-player-width: 360px;
+	position: fixed;
+	z-index: var(--layer-popover, 30);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	width: min(var(--just-audio-player-width), calc(100vw - 32px));
+	max-width: calc(100vw - 32px);
+	padding: 6px 8px;
+	color: var(--text-normal);
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	box-shadow: var(--shadow-s);
+}
+
+.just-audio-player.is-hidden {
+	display: none;
+}
+
+.just-audio-player.is-bottom-right {
+	right: 16px;
+	bottom: 16px;
+}
+
+.just-audio-player.is-bottom-left {
+	bottom: 16px;
+	left: 16px;
+}
+
+.just-audio-player.is-top-right {
+	top: 16px;
+	right: 16px;
+}
+
+.just-audio-player.is-top-left {
+	top: 16px;
+	left: 16px;
+}
+
+.just-audio-player__button {
+	display: grid;
+	flex: 0 0 auto;
+	place-items: center;
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	color: var(--text-normal);
+	background: var(--interactive-normal);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	box-shadow: none;
+	cursor: pointer;
+}
+
+.just-audio-player__button:hover {
+	background: var(--interactive-hover);
+}
+
+.just-audio-player__button:active {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.just-audio-player__button svg {
+	width: 16px;
+	height: 16px;
+}
+
+.just-audio-player__time {
+	flex: 0 0 4.8ch;
+	min-width: 4.8ch;
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	font-variant-numeric: tabular-nums;
+	line-height: 1;
+	text-align: center;
+	white-space: nowrap;
+}
+
+.just-audio-player__timeline {
+	flex: 1 1 auto;
+	min-width: 72px;
+	margin: 0;
+	accent-color: var(--interactive-accent);
+}
+
+.just-audio-player__timeline:disabled {
+	opacity: 0.55;
+}
+
+@media (max-width: 420px) {
+	.just-audio-player {
+		right: 8px;
+		left: 8px;
+		width: auto;
+		max-width: none;
+	}
+
+	.just-audio-player.is-top-left,
+	.just-audio-player.is-top-right {
+		top: 8px;
+	}
+
+	.just-audio-player.is-bottom-left,
+	.just-audio-player.is-bottom-right {
+		bottom: 8px;
+	}
+}
