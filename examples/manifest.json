@@ -1,0 +1,10 @@
+{
+	"id": "just-audio-player",
+	"name": "Just audio player",
+	"version": "0.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "Audio controles in ui footer",
+	"author": "Jhon Crow",
+	"authorUrl": "https://github.com/Jhon-Crow",
+	"isDesktopOnly": false
+}
