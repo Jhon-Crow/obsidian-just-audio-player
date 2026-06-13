@@ -109,6 +109,9 @@ function getSafeCurrentTime(media) {
   }
   return media.currentTime;
 }
+function shouldClearDetachedMedia(media) {
+  return media.paused || media.ended;
+}
 var JustAudioPlayerController = class {
   constructor(onStateChange = () => void 0, scheduler = createDefaultScheduler()) {
     __publicField(this, "onStateChange", onStateChange);
@@ -449,7 +452,9 @@ var JustAudioPlayerPlugin = class extends import_obsidian.Plugin {
       }
       cleanup();
       this.trackedMedia.delete(media);
-      this.controller.clearMedia(media);
+      if (shouldClearDetachedMedia(media)) {
+        this.controller.clearMedia(media);
+      }
     }
   }
 };

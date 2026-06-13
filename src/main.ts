@@ -1,5 +1,10 @@
 import { App, Plugin, PluginSettingTab, Setting, setIcon } from "obsidian";
-import { JustAudioPlayerController, type PlayerCorner, type PlayerState } from "./mediaController";
+import {
+	JustAudioPlayerController,
+	shouldClearDetachedMedia,
+	type PlayerCorner,
+	type PlayerState,
+} from "./mediaController";
 
 interface JustAudioPlayerSettings {
 	width: number;
@@ -241,7 +246,7 @@ export default class JustAudioPlayerPlugin extends Plugin {
 		});
 	}
 
-	private removeDetachedAudioElements(): void {
+	removeDetachedAudioElements(): void {
 		for (const [media, cleanup] of this.trackedMedia.entries()) {
 			if (media.isConnected) {
 				continue;
@@ -249,7 +254,9 @@ export default class JustAudioPlayerPlugin extends Plugin {
 
 			cleanup();
 			this.trackedMedia.delete(media);
-			this.controller.clearMedia(media);
+			if (shouldClearDetachedMedia(media)) {
+				this.controller.clearMedia(media);
+			}
 		}
 	}
 }

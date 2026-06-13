@@ -127,6 +127,10 @@ function getSafeCurrentTime(media: SyncableMedia | null): number {
 	return media.currentTime;
 }
 
+export function shouldClearDetachedMedia(media: Pick<SyncableMedia, "paused" | "ended">): boolean {
+	return media.paused || media.ended;
+}
+
 export class JustAudioPlayerController {
 	private media: SyncableMedia | null = null;
 	private visible = false;

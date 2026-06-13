@@ -4,6 +4,7 @@ import {
 	type AnimationScheduler,
 	type SyncableMedia,
 	formatMediaTime,
+	shouldClearDetachedMedia,
 } from "./mediaController";
 
 class FakeMedia extends EventTarget implements SyncableMedia {
@@ -106,6 +107,12 @@ describe("JustAudioPlayerController", () => {
 		expect(formatMediaTime(65)).toBe("1:05");
 		expect(formatMediaTime(3661)).toBe("1:01:01");
 		expect(formatMediaTime(Number.NaN)).toBe("0:00");
+	});
+
+	it("keeps detached active audio available while it is still playing", () => {
+		expect(shouldClearDetachedMedia({ paused: false, ended: false })).toBe(false);
+		expect(shouldClearDetachedMedia({ paused: true, ended: false })).toBe(true);
+		expect(shouldClearDetachedMedia({ paused: false, ended: true })).toBe(true);
 	});
 
 	it("does not publish duplicate states for repeated media events or unchanged frames", () => {
