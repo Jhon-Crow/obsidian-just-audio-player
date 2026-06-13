@@ -1,5 +1,11 @@
 import { App, Plugin, PluginSettingTab, Setting, setIcon } from "obsidian";
-import { JustAudioPlayerController, type PlayerCorner, type PlayerState } from "./mediaController";
+import {
+	JustAudioPlayerController,
+	copyMediaPlaybackState,
+	shouldClearDetachedMedia,
+	type PlayerCorner,
+	type PlayerState,
+} from "./mediaController";
 
 interface JustAudioPlayerSettings {
 	width: number;
@@ -65,6 +71,7 @@ export default class JustAudioPlayerPlugin extends Plugin {
 	private durationEl: HTMLElement | null = null;
 	private timelineEl: HTMLInputElement | null = null;
 	private observer: MutationObserver | null = null;
+	private detachedMediaEl: HTMLAudioElement | null = null;
 	private readonly trackedMedia = new Map<HTMLMediaElement, () => void>();
 	private readonly controller = new JustAudioPlayerController((state) => this.renderState(state));
 
@@ -78,6 +85,8 @@ export default class JustAudioPlayerPlugin extends Plugin {
 	onunload(): void {
 		this.stopTrackingAudioElements();
 		this.controller.destroy();
+		this.detachedMediaEl?.remove();
+		this.detachedMediaEl = null;
 		this.playerEl?.remove();
 		this.playerEl = null;
 	}
@@ -241,7 +250,7 @@ export default class JustAudioPlayerPlugin extends Plugin {
 		});
 	}
 
-	private removeDetachedAudioElements(): void {
+	removeDetachedAudioElements(): void {
 		for (const [media, cleanup] of this.trackedMedia.entries()) {
 			if (media.isConnected) {
 				continue;
@@ -249,8 +258,35 @@ export default class JustAudioPlayerPlugin extends Plugin {
 
 			cleanup();
 			this.trackedMedia.delete(media);
-			this.controller.clearMedia(media);
+			if (shouldClearDetachedMedia(media)) {
+				this.controller.clearMedia(media);
+			} else if (this.controller.isActiveMedia(media)) {
+				void this.keepDetachedPlaybackAlive(media).catch((error) => {
+					console.error("Just Audio Player could not continue detached playback", error);
+				});
+			}
 		}
+	}
+
+	private async keepDetachedPlaybackAlive(source: HTMLMediaElement): Promise<void> {
+		const detachedMediaEl = this.getDetachedMediaElement();
+		copyMediaPlaybackState(source, detachedMediaEl);
+		this.controller.setActiveMedia(detachedMediaEl, true);
+		await detachedMediaEl.play();
+		source.pause();
+	}
+
+	private getDetachedMediaElement(): HTMLAudioElement {
+		if (this.detachedMediaEl) {
+			return this.detachedMediaEl;
+		}
+
+		const media = document.createElement("audio");
+		media.preload = "auto";
+		media.className = "just-audio-player__detached-media";
+		document.body.appendChild(media);
+		this.detachedMediaEl = media;
+		return media;
 	}
 }
 

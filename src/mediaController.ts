@@ -3,8 +3,12 @@ export type PlayerCorner = "bottom-left" | "bottom-right" | "top-left" | "top-ri
 export interface SyncableMedia extends EventTarget {
 	currentTime: number;
 	duration: number;
+	innerHTML: string;
 	paused: boolean;
 	ended: boolean;
+	muted: boolean;
+	playbackRate: number;
+	src: string;
 	play(): Promise<void> | void;
 	pause(): void;
 }
@@ -125,6 +129,18 @@ function getSafeCurrentTime(media: SyncableMedia | null): number {
 	}
 
 	return media.currentTime;
+}
+
+export function shouldClearDetachedMedia(media: Pick<SyncableMedia, "paused" | "ended">): boolean {
+	return media.paused || media.ended;
+}
+
+export function copyMediaPlaybackState(source: SyncableMedia, target: SyncableMedia): void {
+	target.src = source.src;
+	target.innerHTML = source.innerHTML;
+	target.currentTime = source.currentTime;
+	target.muted = source.muted;
+	target.playbackRate = source.playbackRate;
 }
 
 export class JustAudioPlayerController {

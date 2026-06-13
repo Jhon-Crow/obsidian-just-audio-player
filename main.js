@@ -109,6 +109,16 @@ function getSafeCurrentTime(media) {
   }
   return media.currentTime;
 }
+function shouldClearDetachedMedia(media) {
+  return media.paused || media.ended;
+}
+function copyMediaPlaybackState(source, target) {
+  target.src = source.src;
+  target.innerHTML = source.innerHTML;
+  target.currentTime = source.currentTime;
+  target.muted = source.muted;
+  target.playbackRate = source.playbackRate;
+}
 var JustAudioPlayerController = class {
   constructor(onStateChange = () => void 0, scheduler = createDefaultScheduler()) {
     __publicField(this, "onStateChange", onStateChange);
@@ -290,6 +300,7 @@ var JustAudioPlayerPlugin = class extends import_obsidian.Plugin {
     __publicField(this, "durationEl", null);
     __publicField(this, "timelineEl", null);
     __publicField(this, "observer", null);
+    __publicField(this, "detachedMediaEl", null);
     __publicField(this, "trackedMedia", /* @__PURE__ */ new Map());
     __publicField(this, "controller", new JustAudioPlayerController((state) => this.renderState(state)));
   }
@@ -300,10 +311,12 @@ var JustAudioPlayerPlugin = class extends import_obsidian.Plugin {
     this.startTrackingAudioElements();
   }
   onunload() {
-    var _a;
+    var _a, _b;
     this.stopTrackingAudioElements();
     this.controller.destroy();
-    (_a = this.playerEl) == null ? void 0 : _a.remove();
+    (_a = this.detachedMediaEl) == null ? void 0 : _a.remove();
+    this.detachedMediaEl = null;
+    (_b = this.playerEl) == null ? void 0 : _b.remove();
     this.playerEl = null;
   }
   async loadSettings() {
@@ -449,8 +462,32 @@ var JustAudioPlayerPlugin = class extends import_obsidian.Plugin {
       }
       cleanup();
       this.trackedMedia.delete(media);
-      this.controller.clearMedia(media);
+      if (shouldClearDetachedMedia(media)) {
+        this.controller.clearMedia(media);
+      } else if (this.controller.isActiveMedia(media)) {
+        void this.keepDetachedPlaybackAlive(media).catch((error) => {
+          console.error("Just Audio Player could not continue detached playback", error);
+        });
+      }
     }
+  }
+  async keepDetachedPlaybackAlive(source) {
+    const detachedMediaEl = this.getDetachedMediaElement();
+    copyMediaPlaybackState(source, detachedMediaEl);
+    this.controller.setActiveMedia(detachedMediaEl, true);
+    await detachedMediaEl.play();
+    source.pause();
+  }
+  getDetachedMediaElement() {
+    if (this.detachedMediaEl) {
+      return this.detachedMediaEl;
+    }
+    const media = document.createElement("audio");
+    media.preload = "auto";
+    media.className = "just-audio-player__detached-media";
+    document.body.appendChild(media);
+    this.detachedMediaEl = media;
+    return media;
   }
 };
 var JustAudioPlayerSettingTab = class extends import_obsidian.PluginSettingTab {
