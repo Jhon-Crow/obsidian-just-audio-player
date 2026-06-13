@@ -135,7 +135,9 @@ var JustAudioPlayerController = class {
     });
   }
   setActiveMedia(media, reveal = true) {
+    var _a;
     if (this.media !== media) {
+      (_a = this.media) == null ? void 0 : _a.pause();
       this.unbindActiveMedia();
       this.media = media;
       for (const eventName of MEDIA_EVENTS) {

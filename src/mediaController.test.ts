@@ -120,6 +120,23 @@ describe("JustAudioPlayerController", () => {
 		expect(shouldClearDetachedMedia({ paused: false, ended: true })).toBe(true);
 	});
 
+	it("pauses the previous active media when another track starts", async () => {
+		const controller = new JustAudioPlayerController();
+		const firstMedia = new FakeMedia();
+		const secondMedia = new FakeMedia();
+
+		await firstMedia.play();
+		controller.setActiveMedia(firstMedia, true);
+		await secondMedia.play();
+		controller.setActiveMedia(secondMedia, true);
+
+		expect(firstMedia.pauseCalls).toBe(1);
+		expect(firstMedia.paused).toBe(true);
+		expect(secondMedia.pauseCalls).toBe(0);
+		expect(controller.isActiveMedia(secondMedia)).toBe(true);
+		expect(controller.getState().isPlaying).toBe(true);
+	});
+
 	it("copies playback state before moving detached audio into the plugin player", () => {
 		const source = new FakeMedia();
 		const target = new FakeMedia();

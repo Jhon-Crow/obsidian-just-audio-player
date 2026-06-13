@@ -157,6 +157,7 @@ export class JustAudioPlayerController {
 
 	setActiveMedia(media: SyncableMedia, reveal = true): void {
 		if (this.media !== media) {
+			this.media?.pause();
 			this.unbindActiveMedia();
 			this.media = media;
 			for (const eventName of MEDIA_EVENTS) {
