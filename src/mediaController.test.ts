@@ -3,6 +3,7 @@ import {
 	JustAudioPlayerController,
 	type AnimationScheduler,
 	type SyncableMedia,
+	copyMediaPlaybackState,
 	formatMediaTime,
 	shouldClearDetachedMedia,
 } from "./mediaController";
@@ -10,8 +11,12 @@ import {
 class FakeMedia extends EventTarget implements SyncableMedia {
 	currentTime = 0;
 	duration = 120;
+	innerHTML = "";
 	paused = true;
 	ended = false;
+	muted = false;
+	playbackRate = 1;
+	src = "";
 	playCalls = 0;
 	pauseCalls = 0;
 
@@ -113,6 +118,26 @@ describe("JustAudioPlayerController", () => {
 		expect(shouldClearDetachedMedia({ paused: false, ended: false })).toBe(false);
 		expect(shouldClearDetachedMedia({ paused: true, ended: false })).toBe(true);
 		expect(shouldClearDetachedMedia({ paused: false, ended: true })).toBe(true);
+	});
+
+	it("copies playback state before moving detached audio into the plugin player", () => {
+		const source = new FakeMedia();
+		const target = new FakeMedia();
+		source.src = "app://vault/audio.mp3";
+		source.innerHTML = '<source src="nested.mp3" type="audio/mpeg">';
+		source.currentTime = 42;
+		source.muted = true;
+		source.playbackRate = 1.5;
+
+		copyMediaPlaybackState(source, target);
+
+		expect(target).toMatchObject({
+			src: source.src,
+			innerHTML: source.innerHTML,
+			currentTime: source.currentTime,
+			muted: source.muted,
+			playbackRate: source.playbackRate,
+		});
 	});
 
 	it("does not publish duplicate states for repeated media events or unchanged frames", () => {
